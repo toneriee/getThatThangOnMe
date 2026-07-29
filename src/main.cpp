@@ -1,5 +1,4 @@
 #include <ESP32Servo.h>      // Library for controlling servo motors with ESP32
-#include <Arduino.h>
 #include "BluetoothSerial.h"
 
 BluetoothSerial SerialBT;
@@ -20,6 +19,8 @@ BluetoothSerial SerialBT;
 #define FlameRight 35        // Analog input pin for right flame sensor
 
 #define inbuilt_led 2        // On-board LED pin for ESP32
+#define LedBLE 4             // indicated led for Bluetooth mode
+#define LedFire 16           // indicated led for Firefighter mode
 
 // Time constants (in milliseconds)
 #define move_forward 300     // Forward movement time
@@ -65,18 +66,19 @@ void setup() {
 
   // Set other component pins
   pinMode(pump, OUTPUT);
-  pinMode(inbuilt_led, OUTPUT);
   pinMode(FlameLeft, INPUT);
   pinMode(FlameMiddle, INPUT);
   pinMode(FlameRight, INPUT);
-
+  pinMode(LedBLE, OUTPUT);
+  pinMode(LedFire, OUTPUT);
+  digitalWrite(LedBLE, LOW);
+  digitalWrite(LedFire, LOW);
   // Attach servo motor to pin
   myServo.attach(ServoPin);
   myServo.write(90);  // Center servo
 
   // Ensure pump and LED are off initially
-  digitalWrite(pump, HIGH);
-  digitalWrite(inbuilt_led, LOW);
+  digitalWrite(pump, LOW);
 
 }
 RobotMode mode = BLUETOOTH_MODE;
@@ -111,22 +113,23 @@ else
 switch(mode)
 {
     case BLUETOOTH_MODE:
+        digitalWrite(LedBLE, HIGH);
+        digitalWrite(LedFire, LOW);
         digitalWrite(pump, LOW);
-        digitalWrite(inbuilt_led, LOW);
         myServo.write(90);
 
         bluetoothControl();
         break;
 
     case FIRE_MODE:
-
+        digitalWrite(LedBLE, LOW);
         firefightMode(leftSensor, middleSensor, rightSensor);
         break;
 }
 }
 
 void firefightMode(int left, int middle, int right) {
-  digitalWrite(inbuilt_led, HIGH);  // Turn on LED as alarm indicator
+  digitalWrite(LedFire, HIGH);
   Serial.println("FIRE DETECTED");
 
   // ******************** Robot Movement Logic ********************
@@ -208,7 +211,7 @@ void reset() {
   delay(move_backward);
   stopMoving();                // Stop
   digitalWrite(pump, LOW);     // Turn off pump
-  digitalWrite(inbuilt_led, LOW);  // Turn off LED
+  digitalWrite(LedFire, LOW);
 }
 
 // ---- Motor Control Functions ----
@@ -254,7 +257,7 @@ void slightLeft() {
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, LOW);
   analogWrite(ENA, motorSpeed);
-  analogWrite(ENB, motorSpeed * 0.6);  // Reduce speed of right motor
+  analogWrite(ENB, motorSpeed * 0.8);  // Reduce speed of right motor
 }
 
 void slightRight() {
@@ -262,7 +265,7 @@ void slightRight() {
   digitalWrite(IN2, LOW);
   digitalWrite(IN3, HIGH);
   digitalWrite(IN4, LOW);
-  analogWrite(ENA, motorSpeed * 0.6);  // Reduce speed of left motor
+  analogWrite(ENA, motorSpeed * 0.8);  // Reduce speed of left motor
   analogWrite(ENB, motorSpeed);
 }
 
@@ -304,4 +307,3 @@ void bluetoothControl()
             break;
     }
 }
-// test123
